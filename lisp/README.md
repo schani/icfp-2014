@@ -1,3 +1,17 @@
+# Usage
+
+## Preliminaries
+
+Install [Leiningen](https://github.com/technomancy/leiningen).
+
+Then, in this directory, do
+
+    lein deps
+
+Now you can run the compiler, like so
+
+    lein run examples/useless1.lisp /tmp/useless1.gcc
+
 # Basics
 
 It's a very straightforward LISP, with Clojure syntax.  A sample program:
@@ -74,6 +88,21 @@ These must not be used where their results might matter.
 # Extensions
 
 Maybe we'll implement this later.
+
+## Negation
+
+    (- x)
+
+should compile to
+
+    (- 0 x)
+
+## Logical operators
+
+    (and x y)
+	(or x y)
+
+These should obviously do short circuit evaluation.
 
 ## Inline functions
 
