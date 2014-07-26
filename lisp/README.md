@@ -74,7 +74,7 @@ the next pair, so for example this
     (let [a 1]
 	  (let [a (+ a 1)
 	        b (+ a 1)]
-	    a))
+	    b))
 
 returns 3.
 
