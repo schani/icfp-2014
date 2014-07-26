@@ -30,6 +30,20 @@
 (defn ^:private takes-labels? [opcode]
   (contains? #{:sel :ldf :tsel} opcode))
 
+(defn ^:private env-lookup [env name]
+  (loop [env env
+         n-up 0]
+    (cond
+     (empty? env)
+     (throw (Exception. (str "Undefined variable " name)))
+
+     (contains? (first env) name)
+     [n-up ((first env) name)]
+
+     :else
+     (recur (rest env)
+            (inc n-up)))))
+
 (defn ^:private compile-expr [env expr]
   (match expr
 
@@ -67,13 +81,24 @@
 
          (x :guard number?)
          [[[:ldc x]]
-          []]))
+          []]
+
+         (x :guard symbol?)
+         (let [[n i] (env-lookup env x)]
+           [[[:ld n i]]
+            []])))
 
 (defn ^:private compile-function-body [env expr]
   (let [[pre post] (compile-expr env expr)]
     (concat pre
             [[:rtn]]
             post)))
+
+(defn ^:private compile-toplevel [code]
+  (let [[def-type name args body] code]
+    (assert (= def-type 'defn) "Toplevel is not a defn")
+    (let [env [(into {} (map vector args (range)))]]
+      (compile-function-body env body))))
 
 (defn ^:private collect-labels [asm]
   (loop [asm asm
@@ -123,11 +148,15 @@
 (defn ^:private stringify-asm [asm]
   (apply str (map (fn [insn] (str (stringify-insn insn) "\n")) asm)))
 
+(defn ^:private read-all [stream]
+  (let [sexpr-seq (repeatedly (fn [] (read stream false :theend)))]
+    (take-while (partial not= :theend) sexpr-seq)))
+
 (defn ^:private compile-file [in-filename out-filename]
   (with-open [reader (java.io.PushbackReader. (io/reader in-filename))
               writer (io/writer out-filename)]
     (let [code (read reader)
-          asm (resolve-labels (compile-function-body {} code))
+          asm (resolve-labels (compile-toplevel code))
           asm-string (stringify-asm asm)]
       (.write writer asm-string))))
 
