@@ -79,6 +79,17 @@
                     [[(binary-operators op)]])
             (concat a-post b-post)])
 
+         (x :guard list?)
+         (let [[function & args] x
+               arg-codes (map (partial compile-expr env) args)
+               arg-pres (mapcat first arg-codes)
+               arg-posts (mapcat second arg-codes)
+               [function-pre function-post] (compile-expr env function)]
+           [(concat arg-pres
+                    function-pre
+                    [[:ap (count args)]])
+            (apply concat function-post arg-posts)])
+
          (x :guard number?)
          [[[:ldc x]]
           []]
@@ -94,11 +105,19 @@
             [[:rtn]]
             post)))
 
-(defn ^:private compile-toplevel [code]
+(defn ^:private compile-toplevel [env code]
   (let [[def-type name args body] code]
-    (assert (= def-type 'defn) "Toplevel is not a defn")
-    (let [env [(into {} (map vector args (range)))]]
+    (let [env-frame (zipmap args (range))
+          env (if (= name 'main)
+                (concat env [env-frame])
+                (cons env-frame env))]
       (compile-function-body env body))))
+
+(defn ^:private toplevel-labels [toplevels]
+  (map (fn [toplevel]
+         (assert (= (first toplevel) 'defn) "Toplevel is not a defn")
+         (vector (second toplevel) (gensym "toplevel")))
+       toplevels))
 
 (defn ^:private collect-labels [asm]
   (loop [asm asm
@@ -155,9 +174,25 @@
 (defn ^:private compile-file [in-filename out-filename]
   (with-open [reader (java.io.PushbackReader. (io/reader in-filename))
               writer (io/writer out-filename)]
-    (let [code (read reader)
-          asm (resolve-labels (compile-toplevel code))
+    (let [toplevels (read-all reader)
+          labels (toplevel-labels toplevels)
+          labels-map (into {} labels)
+          toplevel-env [(zipmap (map first labels) (range))]
+          asms (map (fn [[name label] toplevel]
+                      (concat [[:label label]]
+                              (compile-toplevel toplevel-env toplevel)))
+                    labels
+                    toplevels)
+          init-asm (concat [[:dum (count labels)]]
+                           (map (fn [[name label]]
+                                  [:ldf label])
+                                labels)
+                           [[:ldf (labels-map 'main)]
+                            [:rap (count labels)]
+                            [:rtn]])
+          asm (resolve-labels (apply concat init-asm asms))
           asm-string (stringify-asm asm)]
+      (assert (contains? labels-map 'main) "No main function defined")
       (.write writer asm-string))))
 
 (defn -main [& args]

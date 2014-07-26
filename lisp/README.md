@@ -24,6 +24,10 @@ It's a very straightforward LISP, with Clojure syntax.  A sample program:
     (defn main [playfield ghost-code]
 	  (fib 10))
 
+The program must contain a `main` function.  Order of function
+declaration is irrelevant---all functions are visible in all
+functions.
+
 ## Functions
 
 Only top-level functions are allowed.
