@@ -12,6 +12,9 @@
 (defn map_get [x y map]
   (nth x (nth y map)))
 
+(defn opposite_direction [dir]
+  (modulo 4 (+ dir 2)))
+
 ; must not be called on border
 (defn map_get_surroundings [x y map]
   (cons (map_get x (- y 1) map)
