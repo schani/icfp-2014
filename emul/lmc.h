@@ -75,6 +75,7 @@ typedef struct frame_ *frame_p;
 typedef
 struct val_ {
     tag_t tag;
+    val_p next;
     union {
 	uint32_t num;
 	addr_t addr;
@@ -88,7 +89,6 @@ struct val_ {
 	    frame_p env;
 	} closure;
     };
-    val_p next;
 } val_t;
 
 typedef
@@ -213,6 +213,25 @@ void FREE_VAL(val_p x)
     free(x);
 }
 
+static inline
+void FREE_VAL_REC(val_p x)
+{
+    while (x) {
+	val_p next = x->next;
+	free(x);
+	x = next;
+    }
+}
+
+static inline
+void FREE_STACK(val_p *s)
+{
+    FREE_VAL_REC(*s);
+    *s = NULL;
+}
+
+
+
 #define	TRUE	VAL_INT(1)
 #define	FALSE	VAL_INT(0)
 
@@ -294,13 +313,20 @@ val_t POPF(val_p *s)
 }
 
 
+
+#define	FRAME_PARENT(f)		((f)->parent)
+#define	FRAME_VALUE(f, i)	((f)->value[i])
+#define	FRAME_SIZE(f)		((f)->size)
+#define	FRAME_TAG(f)		((f)->tag)
+
 static inline
 frame_p ALLOC_FRAME(uint32_t s, frame_p fp)
 {
-    frame_p new = calloc(1, sizeof(frame_t) + sizeof(val_t) * s);
+    frame_p new = calloc(1, sizeof(frame_t) + sizeof(val_t) * s * 2);
     assert(new != NULL);
     new->parent = fp;
     new->size = s;
+    new->tag = TAG_FRAME;
     return new;
 }
 
@@ -310,10 +336,16 @@ void FREE_FRAME(frame_p fp)
     free(fp);
 }
 
-#define	FRAME_PARENT(f)		((f)->parent)
-#define	FRAME_VALUE(f, i)	((f)->value[i])
-#define	FRAME_SIZE(f)		((f)->size)
-#define	FRAME_TAG(f)		((f)->tag)
+static inline
+void FREE_FRAME_REC(frame_p fp)
+{
+    while (fp) {
+	frame_p parent = FRAME_PARENT(fp);
+	free(fp);
+	fp = parent;
+    }
+}
+
 
 
 /* static inline
@@ -357,13 +389,13 @@ static inline int IS_ZERO(val_t x)
 
 static inline val_p CARF(val_t x)
 {
-    FREE_VAL(x.cons.right);
+    /* FIXME: collect	FREE_VAL(x.cons.right); */
     return x.cons.left;
 }
 
 static inline val_p CDRF(val_t x)
 {
-    FREE_VAL(x.cons.left);
+    /* FIXME: collect	FREE_VAL(x.cons.left); */
     return x.cons.right;
 }
 
@@ -375,7 +407,8 @@ int limit(lmc_t *lmc)
 {
     fprintf(stderr, "ICNT=%d PC=%d", lmc->icnt, lmc->c);
     dump_state(lmc);
-    dump_data(lmc);
+    // dump_frame(lmc, 0);
+    dump_data(lmc, 0);
     lmc->icnt++;
     return (lmc->icnt > lmc->limit);
 }

@@ -29,6 +29,7 @@ void gcc_LD(lmc_t *lmc, uint32_t n, uint32_t i)
 
     if (FRAME_TAG(fp) == TAG_DUM)
 	FAULT(lmc, FLT_FRAME_MISMATCH_FRAME, VAL_FRAME(fp));
+
     val_t v = FRAME_VALUE(fp, i);
     lmc->s = PUSH(v, lmc->s);
     lmc->c = lmc->c+1;
@@ -409,7 +410,7 @@ static inline
 void gcc_DBUG(lmc_t *lmc)
 {
     val_t x = POPF(&lmc->s);
-    dump_valp("DBUG", &x);
+    dump_valp("DBUG", &x, -1);
     lmc->c = lmc->c+1;
 }
 
