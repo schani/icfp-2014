@@ -1,0 +1,12 @@
+; map funs
+
+(include "stdlib.ucl")
+
+(defn map_width [map]
+  (length (car map)))
+
+(defn map_height [map]
+  (length map))
+
+(defn map_get [x y map]
+  (nth x (nth y map)))

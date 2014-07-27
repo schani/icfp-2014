@@ -1,0 +1,4 @@
+(defn nth [n list]
+  (if (= n 0)
+    (car list)
+    (nth (- n 1) (cdr list))))
