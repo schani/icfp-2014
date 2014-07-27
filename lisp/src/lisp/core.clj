@@ -139,7 +139,7 @@
          ([(op :guard unary-operator?) x] :seq)
          (let [[x-pre x-post] (compile-expr env false x)]
            [(concat x-pre
-                    [(unary-operators op)]
+                    [[(unary-operators op)]]
                     (if tail [[:rtn]] []))
             x-post])
 
