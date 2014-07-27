@@ -1,0 +1,21 @@
+main:
+  DUM  2	; 2 top-level decls
+  LDC  1	; constant right
+  LDF  step	; declare step function
+  LDF  init	; declare init function
+  RAP  2	; load decls and run init
+  RTN		; return from 'main'
+
+init:
+  LDC  42	; AI state
+  LD   0 1	; step function
+  CONS		; pair
+  RTN		; return (42, &step)
+
+step:
+  LD   0 0	; var s
+  LDC  1	; const 1
+  ADD		; add
+  LD   1 0	; const right
+  CONS		; pair
+  RTN		; return (s+1, right)

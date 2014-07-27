@@ -35,10 +35,36 @@ enum fault_ {
     FLT_FRAME_MISMATCH_SIZE,
     FLT_FRAME_MISMATCH_SAME,
 
+    FLT_NO_ENVIRONMENT,
     FLT_NO_PARENT,
 
     FLT_LAST
 } fault_t;
+
+
+static inline
+const char *fault_msg(fault_t id) {
+    const char const *msg[FLT_LAST] = {
+	[FLT_UNKNOWN] =			    "Unknown Fault",
+
+	[FLT_TAG_MISMATCH_INT] =	    "Not an INT Type",
+	[FLT_TAG_MISMATCH_CONS] =	    "Not a CONS Type",
+	[FLT_TAG_MISMATCH_CLOSURE] =	    "Not a CLOSURE Type",
+
+	[FLT_CONTROL_MISMATCH_JOIN] =	    "Not a JOIN Type",
+	[FLT_CONTROL_MISMATCH_RET] =	    "Not a RET Type",
+
+	[FLT_FRAME_MISMATCH_DUM] =	    "Not a DUM Frame",
+	[FLT_FRAME_MISMATCH_FRAME] =	    "Not a FULL Frame",
+	[FLT_FRAME_MISMATCH_SIZE] =	    "Frame Size Mismatch",
+	[FLT_FRAME_MISMATCH_SAME] =	    "Environment Mismatch",
+
+	[FLT_NO_ENVIRONMENT] =		    "Missing Environment",
+	[FLT_NO_PARENT] =		    "Missing Parent",
+    };
+    return msg[id];
+}
+
 
 typedef uint32_t addr_t;
 
@@ -198,7 +224,8 @@ void FREE_VAL(val_p x)
 static inline
 void handle_fault(const char *func, lmc_t *lmc, fault_t id, val_t val)
 {
-    fprintf(stderr, "FAULT #%d in %s\n", id, func);
+    fprintf(stderr,
+	"FAULT #%d (%s) in %s\n", id, fault_msg(id), func);
     dump_state(lmc);
     lmc->fault = 1;
 }
@@ -346,6 +373,9 @@ static inline val_p CDRF(val_t x)
 static inline
 int limit(lmc_t *lmc)
 {
+    fprintf(stderr, "ICNT=%d PC=%d", lmc->icnt, lmc->c);
+    dump_state(lmc);
+    dump_data(lmc);
     lmc->icnt++;
     return (lmc->icnt > lmc->limit);
 }

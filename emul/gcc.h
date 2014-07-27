@@ -17,12 +17,16 @@ static inline
 void gcc_LD(lmc_t *lmc, uint32_t n, uint32_t i)
 {
     frame_p fp = lmc->e;
+    if (!fp)
+	FAULT(lmc, FLT_NO_ENVIRONMENT, VAL_FRAME(fp));
+
     while (n > 0) {
 	fp = FRAME_PARENT(fp);
 	if (!fp)
 	    FAULT(lmc, FLT_NO_PARENT, VAL_FRAME(fp));
 	n = n-1;
     }
+
     if (FRAME_TAG(fp) == TAG_DUM)
 	FAULT(lmc, FLT_FRAME_MISMATCH_FRAME, VAL_FRAME(fp));
     val_t v = FRAME_VALUE(fp, i);
@@ -383,9 +387,13 @@ static inline
 void gcc_ST(lmc_t *lmc, uint32_t n, uint32_t i)
 {
     frame_p fp = lmc->e;
+    if (!fp)
+	FAULT(lmc, FLT_NO_ENVIRONMENT, VAL_FRAME(fp));
 
     while (n > 0) {
 	fp = FRAME_PARENT(fp);
+	if (!fp)
+	    FAULT(lmc, FLT_NO_PARENT, VAL_FRAME(fp));
 	n = n-1;
     }
 

@@ -53,6 +53,7 @@ function ret()	{ T[PC]++; }
 (A[1]=="CGT")	{ arg0(A[1]);			flt();			}
 (A[1]=="CGTE")	{ arg0(A[1]);			flt();			}
 (A[1]=="ATOM")	{ arg0(A[1]);						}
+(A[1]=="CONS")	{ arg0(A[1]);						}
 (A[1]=="CAR")	{ arg0(A[1]);			flt();			}
 (A[1]=="CDR")	{ arg0(A[1]);			flt();			}
 (A[1]=="SEL")	{ cond(A[1], tg(A[2]), tg(A[3]));	flt();		}
