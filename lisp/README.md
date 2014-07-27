@@ -39,7 +39,7 @@ visible in every function.
 Closures are made with `fn`:
 
     (defn map [f l]
-	  (if (integer? l)
+	  (if (atom? l)
 	    0
 		(cons (f (car l))
 		      (map f (cdr l)))))
@@ -74,9 +74,9 @@ but this will not:
 	(> a b)
 	(>= a b)
 
-    (integer? x)
+    (atom? x)
 
-Comparisons and `integer?` return either the integer `0` or `1`.
+Comparisons and `atom?` return either the integer `0` or `1`.
 
 ## Conses
 
