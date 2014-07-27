@@ -24,16 +24,44 @@ It's a very straightforward LISP, with Clojure syntax.  A sample program:
     (defn main [playfield ghost-code]
 	  (fib 10))
 
-The program must contain a `main` function.  Order of function
-declaration is irrelevant---all functions are visible in all
-functions.
+The program must contain a `main` function.
 
 ## Functions
 
-Only top-level functions are allowed.
+Use `defn` at the top-level to define global functions:
 
     (defn name [arg1 arg2 ...]
 	  body)
+
+The order of function declaration is irrelevant---every function is
+visible in every function.
+
+Closures are made with `fn`:
+
+    (defn map [f l]
+	  (if (integer? l)
+	    0
+		(cons (f (car l))
+		      (map f (cdr l)))))
+
+    (defn inc-list-elements [l]
+	  (map (fn [x] (+ x 1))
+	       l))
+
+Note that operators are not first-class functions.  To make a function
+that adds two numbers, use
+
+    (fn [a b] (+ a b))
+
+In other words, this will add `1` and `2`:
+
+    (let [add (fn [a b] (+ a b))]
+	  (add 1 2))
+
+but this will not:
+
+    (let [add +]
+	  (add 1 2))
 
 ## Operators
 
@@ -163,11 +191,6 @@ don't.  `do` can be simulated with `let`:
 	  something-second
 	  ...
 	  result)
-
-## Closures
-
-Right now functions are not first class, i.e. there's no `lambda`.  Do
-we need that?
 
 ## Local variable modification
 

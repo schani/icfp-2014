@@ -30,6 +30,9 @@
 (defn ^:private let-keyword? [x]
   (= x 'let))
 
+(defn ^:private fn-keyword? [x]
+  (= x 'fn))
+
 (defn ^:private takes-labels? [opcode]
   (contains? #{:sel :ldf :tsel} opcode))
 
@@ -46,6 +49,8 @@
      :else
      (recur (rest env)
             (inc n-up)))))
+
+(declare ^:private compile-function)
 
 (defn ^:private compile-expr [env tail expr]
   (match expr
@@ -76,18 +81,14 @@
                binding-codes (map (partial compile-expr env false) binding-exprs)
                binding-pres (mapcat first binding-codes)
                binding-posts (mapcat second binding-codes)
-               body-env (cons (zipmap binding-names (range))
-                              env)
-               [body-pre body-post] (compile-expr body-env true body)
+               body-code (compile-function env binding-names false body)
                body-label (gensym "let")]
            [(concat binding-pres
                     [[:ldf body-label]]
                     [[(if tail :tap :ap) (count bindings)]])
             (concat binding-posts
                     [[:label body-label]]
-                    body-pre
-                    (if tail [] [[:rtn]])
-                    body-post)])
+                    body-code)])
 
          ([(op :guard unary-operator?) x] :seq)
          (let [[x-pre x-post] (compile-expr env false x)]
@@ -104,6 +105,14 @@
                     [[(binary-operators op)]]
                     (if tail [[:rtn]] []))
             (concat a-post b-post)])
+
+         ([(op :guard fn-keyword?) args body] :seq)
+         (let [body-code (compile-function env args false body)
+               body-label (gensym :fn)]
+           [(concat [[:ldf body-label]]
+                    (if tail [[:rtn]] []))
+            (concat [[:label body-label]]
+                    body-code)])
 
          (x :guard list?)
          (let [[function & args] x
@@ -127,18 +136,18 @@
                     (if tail [[:rtn]] []))
             []])))
 
-(defn ^:private compile-function-body [env expr]
-  (let [[pre post] (compile-expr env true expr)]
+(defn ^:private compile-function [env args is-main body]
+  (let [env-frame (zipmap args (range))
+        env (if is-main
+              (concat env [env-frame])
+              (cons env-frame env))
+        [pre post] (compile-expr env true body)]
     (concat pre
             post)))
 
 (defn ^:private compile-toplevel [env code]
   (let [[def-type name args body] code]
-    (let [env-frame (zipmap args (range))
-          env (if (= name 'main)
-                (concat env [env-frame])
-                (cons env-frame env))]
-      (compile-function-body env body))))
+    (compile-function env args (= name 'main) body)))
 
 (defn ^:private toplevel-labels [toplevels]
   (map (fn [toplevel]
