@@ -18,7 +18,7 @@
 ; must not be called on border
 (defn map_get_surroundings [x y map]
   (cons (map_get x (- y 1) map)
-	(cons (map_get (+ x 1) map)
+	(cons (map_get (+ x 1) y map)
 	      (cons (map_get x (+ y 1) map)
 		    (map_get (- x 1) y map)))))
 

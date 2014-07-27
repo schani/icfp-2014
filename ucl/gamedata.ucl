@@ -10,5 +10,11 @@
 (defn worldstate_get_fruits [world_state]
   (cdr (cdr (cdr world_state))))
 
+(defn lman_get_vitality [lman_state]
+   (car lman_state))
 (defn lman_get_location [lman_state]
    (car (cdr lman_state)))
+(defn lman_get_direction [lman_state]
+   (car (cdr (cdr lman_state))))
+(defn lman_get_lives [lman_state]
+   (car (cdr (cdr (cdr lman_state)))))
