@@ -259,7 +259,7 @@ void gcc_RTN(lmc_t *lmc)
     val_t x = POPF(&lmc->d);
 
     if (TAG(x) == TAG_STOP)
-	MACHINE_STOP();
+	MACHINE_STOP(lmc);
     if (TAG(x) != TAG_RET)
 	FAULT(lmc, FLT_CONTROL_MISMATCH_RET, x);
 

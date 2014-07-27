@@ -3,6 +3,8 @@
 CFLAGS = -O3 -g -std=gnu99 -Wall -Wunused-label
 
 HFILES = $(wildcard *.h)
+GFILES = $(wildcard *.gawk)
+
 
 ALL:	engine lmchk
 
@@ -18,11 +20,11 @@ engine : engine.o lmc.o ghost0.o ghost1.o ghost2.o ghost3.o
 
 engine.o : engine.c $(HFILES)
 
-%.c : %.ghc ghc.h $(HFILES)
+%.c : %.ghc ghc.h $(HFILES) ghc2c.gawk
 	gawk -v GHOST=$* -f ghc2c.gawk $< >$@
 
-%.c : %.gcc gcc.h $(HFILES)
+%.c : %.gcc gcc.h $(HFILES) gcc2c.gawk
 	gawk -v LMAN=$* -f gcc2c.gawk $< >$@
 
-%.o : %.c
+%.o : %.c $(HFILES)
 	$(CC) $(CFLAGS) -c -o $@ $<

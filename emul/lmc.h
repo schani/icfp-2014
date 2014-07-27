@@ -204,9 +204,10 @@ void handle_fault(const char *func, lmc_t *lmc, fault_t id, val_t val)
 }
 
 static inline
-void handle_stop(void)
+void handle_stop(lmc_t *lmc)
 {
     fprintf(stderr, "STOP\n");
+    lmc->fault = -1;
 }
 
 #define	FAULT(l, m, v) do {			\
@@ -218,8 +219,8 @@ void handle_stop(void)
 	return (r); } while (0)
 
 
-#define	MACHINE_STOP() do {			\
-	handle_stop();				\
+#define	MACHINE_STOP(l) do {			\
+	handle_stop(l);				\
 	return; } while (0)
 
 

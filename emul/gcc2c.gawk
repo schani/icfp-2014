@@ -88,6 +88,7 @@ END		{ printf "#define gcc_GOTO(lmc) do {\t\t\\\n";
 		  printf "} while(0)\n\n";
 		  printf "void exec_%s", LMAN;
 		  printf "(lmc_t *lmc) {\n";
+		  printf "\tENTRY:\tgcc_GOTO(%s);\n", LM;
 
 		  for (i=0; i<=PC; i++) {
 		    if (match(C[i], "@([^@]*)@", a)) {
