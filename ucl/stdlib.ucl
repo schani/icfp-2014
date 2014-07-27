@@ -8,6 +8,12 @@
     (car list)
     (nth (- n 1) (cdr list))))
 
+; n mod m
+(defn modulo [m n]
+  (if (< n m)
+    n
+    (modulo m (- n m))))
+
 ; internal stuff
 
 (defn length_ [n list]
