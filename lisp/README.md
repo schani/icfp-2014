@@ -72,13 +72,14 @@ true.
 		  ...]
       body)
 
-`let` works like in Clojure.  The bindings are active immediately in
-the next pair, so for example this
+`let` works like in Common Lisp.  The bindings are only active within
+the body, not in the value expressions.  For example, this:
 
-    (let [a 1]
-	  (let [a (+ a 1)
-	        b (+ a 1)]
-	    b))
+    (let [a 1
+	      b 2]
+      (let [a b
+	        b a]
+	    (+ a b)))
 
 returns 3.
 

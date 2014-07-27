@@ -27,6 +27,9 @@
 (defn ^:private if-keyword? [x]
   (= x 'if))
 
+(defn ^:private let-keyword? [x]
+  (= x 'let))
+
 (defn ^:private takes-labels? [opcode]
   (contains? #{:sel :ldf :tsel} opcode))
 
@@ -64,6 +67,26 @@
                     alternative-pre
                     [[:join]]
                     alternative-post)])
+
+         ([(kw :guard let-keyword?) bindings body] :seq)
+         (let [bindings (partition 2 bindings)
+               binding-names (map first bindings)
+               binding-exprs (map second bindings)
+               binding-codes (map (partial compile-expr env) binding-exprs)
+               binding-pres (mapcat first binding-codes)
+               binding-posts (mapcat second binding-codes)
+               body-env (cons (zipmap binding-names (range))
+                              env)
+               [body-pre body-post] (compile-expr body-env body)
+               body-label (gensym "let")]
+           [(concat binding-pres
+                    [[:ldf body-label]]
+                    [[:ap (count bindings)]])
+            (concat binding-posts
+                    [[:label body-label]]
+                    body-pre
+                    [[:rtn]]
+                    body-post)])
 
          ([(op :guard unary-operator?) x] :seq)
          (let [[x-pre x-post] (compile-expr env x)]
