@@ -1,0 +1,6 @@
+
+LDC 1
+SEL 2 4
+LDC 0
+TSEL 0 4
+RET
