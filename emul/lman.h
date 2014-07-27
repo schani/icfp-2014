@@ -30,7 +30,7 @@ void lman_init(lman_t *lman, int index)
 
     lman->vit = 0;
 
-    lman->lives = 0;
+    lman->lives = 3;
     lman->score = 0;
 
     lman->ticks = lman_ticks(index, 0);

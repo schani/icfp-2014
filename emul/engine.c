@@ -125,6 +125,7 @@ void lman_die(state_t *state, lman_t *lman)
 
     lman->dir = DIR_DOWN;
     lman->pos = lman->start;
+    lman->lives--;
 }
 
 
@@ -190,7 +191,7 @@ void move_ghost(state_t *state, int index)
 	    else if (class & (1 << inv))	/* turn back */
 		dir = inv;
 	    else
-		exit(2);
+		exit(3);
 	}
     }
 
@@ -428,6 +429,7 @@ void mech_lman(state_t *state)
 	switch (map_data(&state->map, pos.x, pos.y)) {
 	    case SQ_PILL:
 		state->lman[i].score += 10;
+		state->pcnt--;
 		break;
 
 	    case SQ_POWER:
@@ -491,12 +493,12 @@ void mech_over(state_t *state)
 
 int mech_win(state_t *state)
 {
-    return 0;
+    return (state->pcnt == 0);
 }
 
 int mech_lose(state_t *state)
 {
-    return 0;
+    return (state->lman[0].lives == 0);
 }
 
 
@@ -559,14 +561,15 @@ int main(int argc, char *argv[])
 
 	if (win) {
 	    fprintf(stdout, "win\n");
+	    exit(0);
 	}
 
 	if (lose) {
 	    fprintf(stdout, "lose\n");
+	    exit(1);
 	}
 
 	getchar();
     }
-
-
+    exit(2);
 }
