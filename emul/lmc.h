@@ -191,72 +191,8 @@ void FREE_VAL(val_p x)
 #define	FALSE	VAL_INT(0)
 
 
+#include "lmc_dump.h"
 
-static inline
-void dump_valp(const char *msg, val_p val)
-{
-    fprintf(stderr, "%s", msg);
-    switch (val->tag) {
-	case TAG_EMPTY:
-	    fprintf(stderr, "<EMPTY>");
-	    break;
-	
-	case TAG_INT:
-	    fprintf(stderr, "%d", val->num);
-	    break;
-
-	case TAG_CONS:
-	    dump_valp("(", val->cons.left);
-	    dump_valp(", ", val->cons.right);
-	    fprintf(stderr, ")");
-	    break;
-
-	case TAG_CLOSURE:
-	    fprintf(stderr, "{%d, %p}",
-		val->closure.addr, val->closure.env);
-	    break;
-
-	case TAG_ADDR:
-	    fprintf(stderr, "@%d", val->addr);
-	    break;
-
-	case TAG_RET:
-	    fprintf(stderr, "RET");
-	    break;
-
-	case TAG_JOIN:
-	    fprintf(stderr, "JOIN");
-	    break;
-
-	case TAG_STOP:
-	    fprintf(stderr, "STOP");
-	    break;
-
-	case TAG_DUM:
-	    fprintf(stderr, "DUM");
-	    break;
-
-	case TAG_FRAME:
-	    fprintf(stderr, "FRAME");
-	    break;
-    }
-}
-
-static inline
-void dump_state(lmc_t *lmc)
-{
-    fprintf(stderr,
-	"STATE %%s=%p, %%d=%p, %%e=%p, %%c=%d\n",
-	lmc->s, lmc->d, lmc->e, lmc->c);
-}
-
-static inline
-void dump_data(lmc_t *lmc)
-{
-    for (val_p this = lmc->s; this; this = this->next)
-	dump_valp("\nVAL\t", this);
-    fprintf(stderr, "\n");
-}
 
 
 static inline
@@ -412,6 +348,5 @@ int limit(lmc_t *lmc)
     lmc->icnt++;
     return (lmc->icnt > lmc->limit);
 }
-
 
 #endif

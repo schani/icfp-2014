@@ -8,9 +8,12 @@ void exec_lman(int limit)
 {
     lmc_t lmc = { .limit = limit, .d = ALLOC_VAL(TAG_STOP) };
 
+    fprintf(stderr, "\nInitial LMC:\n");
+    dump_all(&lmc);
+    fprintf(stderr, "\nExecuting LMC ...\n");
     exec_lmc(&lmc);
-    dump_state(&lmc);
-    dump_data(&lmc);
+    fprintf(stderr, "\nFinal LMC:\n");
+    dump_all(&lmc);
 }
 
 
