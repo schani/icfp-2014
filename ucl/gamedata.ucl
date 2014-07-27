@@ -11,6 +11,3 @@
   (car (cdr (cdr (cdr world_state)))))
 (defn lman_get_location [lman_state]
    (car (cdr lman_state)))
-
-(defn main [a b]
-  (cons 1 2))
