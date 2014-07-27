@@ -21,3 +21,45 @@
 	(cons (map_get (+ x 1) map)
 	      (cons (map_get x (+ y 1) map)
 		    (map_get (- x 1) y map)))))
+
+; create a list of all junctions of a map
+; tried to code that efficient, so it reads 3 lines at once
+(defn map_create_junction_list [map]
+  map_create_junction_list_ 0 1 (length map) map)
+
+; internal
+(defn map_create_junction_list_ [result y lines mappart]
+  (if (> 3 length)
+    result
+    (let [result (let [line1 (car mappart)
+		       line2 (car (cdr mappart))
+		       line3 (car (cdr (cdr mappart)))
+		       width (length (car mappart))]
+		   (map_create_junction_list_scan3_ result 0 y width
+						    line1 line2 line3))]
+      (map_create_junction_list_ result (- lines 1) (+ y 1) (cdr mappart)))))
+
+(defn map_create_junction_list_scan3_ [result x y width line1 line2 line3]
+  (if (> 3 width)
+    result
+    (let [left (car line2)
+	  center (car (cdr line2))
+	  right (car (cdr (cdr line2)))
+	  top (car (cdr line1))
+	  bottom (car (cdr line3))]
+      (if (or (= 0 center) ; walls can't be junctions
+	      (> 1 (count_walls_ 
+		    0 (cons left (cons right (cons top (cons bottom 0)))))))
+	(map_create_junction_list_scan3_ result (+ x 1) y (- width 1)
+					 (cdr line1) (cdr line2) (cdr line3))
+	(map_create_junction_list_scan3_ (cons (cons x y) result)
+					 (+ x 1) y (- width 1)
+					 (cdr line1) (cdr line2) 
+					 (cdr line3))))))
+
+(defn count_walls_ [n list]
+  (if (atom? list)
+    n
+    (if (= 0 (car list))
+      (count_walls_ (+ n 1) (cdr list))
+      (count_walls_ n (cdr list)))))

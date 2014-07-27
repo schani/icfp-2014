@@ -10,7 +10,7 @@
 
 ; n mod m
 (defn modulo [m n]
-  (if (< n m)
+  (if (> m n)
     n
     (modulo m (- n m))))
 
