@@ -10,6 +10,7 @@ static const char *cmd_name;
 static uint32_t num_entry = 0;
 static uint32_t num_limit = 60*3072*1000;
 static uint32_t num_step = 0;
+static uint32_t num_mode = 0;
 
 void exec_lmc(lmc_t *lmc);
 
@@ -25,13 +26,20 @@ void exec_lman(uint32_t entry, uint32_t limit)
 	.d = ALLOC_VAL(TAG_STOP) };
 
     fprintf(stderr, "\nInitial LMC:\n");
-    dump_all(&lmc);
+    dump_all(&lmc, num_mode);
 
     fprintf(stderr, "\nExecuting LMC @%d ...\n", entry);
     exec_lmc(&lmc);
 
+    while (num_step) {
+	FREE_STACK(&lmc.s);
+	FREE_STACK(&lmc.d);
+
+	num_step--;
+    }
+
     fprintf(stderr, "\nFinal LMC:\n");
-    dump_all(&lmc);
+    dump_all(&lmc, num_mode);
 }
 
 
@@ -41,8 +49,8 @@ int main(int argc, char *argv[])
     extern char *optarg;
     int c, err_flag = 0;
 
-    #define VERSION "V1.0"
-    #define OPTIONS "hE:L:N:"
+    #define VERSION "V1.1"
+    #define OPTIONS "hE:L:N:M:"
 
     cmd_name = argv[0];
     while ((c = getopt(argc, argv, OPTIONS)) != EOF) {
@@ -54,7 +62,8 @@ int main(int argc, char *argv[])
 		"-h	   print this help message\n"
 		"-E <val>  function entry\n"
 		"-L <num>  terminate after <num> cycles\n"
-		"-N <num>  call step <num> times \n"
+		"-N <num>  call step <num> times\n"
+		"-M <num>  debug mode\n"
 		, cmd_name);
 	    exit(0);
 	    break;
@@ -66,6 +75,9 @@ int main(int argc, char *argv[])
 	    break;
 	case 'N':
 	    num_step = strtoll(optarg, NULL, 0);
+	    break;
+	case 'M':
+	    num_mode = strtoll(optarg, NULL, 0);
 	    break;
 	case '?':
 	default:
