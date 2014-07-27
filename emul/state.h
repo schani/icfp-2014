@@ -7,6 +7,7 @@
 #include "lman.h"
 #include "ghost.h"
 #include "fruit.h"
+#include "lmc.h"
 
 
 typedef
@@ -34,6 +35,10 @@ struct state_ {
     int fnum;
 
     event_t event;
+
+    lmc_t lmc;
+    val_t ai;
+    val_t step;
 
     int pcnt;
 

@@ -107,6 +107,7 @@ struct lmc_ {
     addr_t c;
 
     int fault;
+    int step;
     uint32_t icnt;
     uint32_t limit;
 } lmc_t;
@@ -322,7 +323,7 @@ val_t POPF(val_p *s)
 static inline
 frame_p ALLOC_FRAME(uint32_t s, frame_p fp)
 {
-    frame_p new = calloc(1, sizeof(frame_t) + sizeof(val_t) * s * 2);
+    frame_p new = calloc(1, sizeof(frame_t) + sizeof(val_t) * s);
     assert(new != NULL);
     new->parent = fp;
     new->size = s;
@@ -344,6 +345,13 @@ void FREE_FRAME_REC(frame_p fp)
 	free(fp);
 	fp = parent;
     }
+}
+
+static inline
+void FREE_ENV(frame_p *fp)
+{
+    FREE_FRAME_REC(*fp);
+    *fp = NULL;
 }
 
 
@@ -402,13 +410,13 @@ static inline val_p CDRF(val_t x)
 #define	FRAME(v)	((v).frame)
 
 
+void step(lmc_t *lmc);
+
 static inline
 int limit(lmc_t *lmc)
 {
-    fprintf(stderr, "ICNT=%d PC=%d", lmc->icnt, lmc->c);
-    dump_state(lmc);
-    // dump_frame(lmc, 0);
-    dump_data(lmc, 0);
+    if (lmc->step)
+	step(lmc);
     lmc->icnt++;
     return (lmc->icnt > lmc->limit);
 }

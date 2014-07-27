@@ -5,6 +5,13 @@
 #include "lmc.h"
 
 
+void step(lmc_t *lmc) {
+    fprintf(stderr, "ICNT=%d\t", lmc->icnt);
+    dump_state(lmc);
+    dump_frame(lmc, 0);
+    dump_data(lmc, 0);
+}
+
 static const char *cmd_name;
 
 static uint32_t num_entry = 0;
@@ -17,10 +24,11 @@ void exec_lmc(lmc_t *lmc);
 void exec_lman(uint32_t entry, uint32_t limit)
 {
     frame_p env = ALLOC_FRAME(2, NULL);
-    FRAME_TAG(env) = TAG_FRAME;
+    FRAME_VALUE(env, 0) = VAL_INT(-1);
 
     lmc_t lmc = { 
 	.limit = limit,
+	.step = 1,
 	.e = env,
 	.c = entry,
 	.d = ALLOC_VAL(TAG_STOP) };
@@ -31,13 +39,61 @@ void exec_lman(uint32_t entry, uint32_t limit)
     fprintf(stderr, "\nExecuting LMC @%d ...\n", entry);
     exec_lmc(&lmc);
 
+    if (!num_step)
+	goto done;
+
+    val_t cons = POPF(&lmc.s);
+    if (TAG(cons) != TAG_CONS) {
+	fprintf(stderr, "main() must return CONS");
+	goto done;
+    }
+
+    val_t step_cl = *CDRF(cons);
+    if (TAG(step_cl) != TAG_CLOSURE) {
+	fprintf(stderr, "main() must return CONS(?, CLOSURE)");
+	goto done;
+    }
+
+    val_t ai = *CARF(cons);
+
+    entry = CAR_CLOSURE(step_cl);
+    frame_p step_env = CDR_CLOSURE(step_cl);
+
     while (num_step) {
 	FREE_STACK(&lmc.s);
 	FREE_STACK(&lmc.d);
+	// FREE_ENV(&lmc.e);
+
+	frame_p env = ALLOC_FRAME(2, step_env);
+	FRAME_VALUE(env, 0) = ai;
+	FRAME_VALUE(env, 1) = VAL_INT(-1);
+
+	lmc.e = env;
+	lmc.c = entry;
+	lmc.d = ALLOC_VAL(TAG_STOP);
+
+	lmc.fault = 0;
+	lmc.icnt = 0;
+	lmc.limit = 3072*1000;
+
+	fprintf(stderr, "\nIntermediate LMC:\n");
+	dump_all(&lmc, num_mode);
+
+	fprintf(stderr, "\nExecuting LMC @%d ...\n", entry);
+	exec_lmc(&lmc);
+
+	val_t cons = POPF(&lmc.s);
+	if (TAG(cons) != TAG_CONS) {
+	    fprintf(stderr, "step() must return CONS");
+	    goto done;
+	}
+
+	ai = *CARF(cons);
 
 	num_step--;
     }
 
+done:
     fprintf(stderr, "\nFinal LMC:\n");
     dump_all(&lmc, num_mode);
 }

@@ -4,9 +4,13 @@
 #include "ticks.h"
 #include "score.h"
 #include "lmc.h"
+#include "lmc_dump.h"
 
 static state_t state;
 
+void step(lmc_t *lmc) {
+    return;
+}
 
 void scan_map(map_t *map, state_t *state)
 {
@@ -197,9 +201,37 @@ void move_ghost(state_t *state, int index)
 
 
 
-
-
 void exec_lmc(lmc_t *lmc);
+
+void init_lman(state_t *state, int index)
+{
+    frame_p env = ALLOC_FRAME(2, NULL);
+    FRAME_VALUE(env, 0) = VAL_INT(-1);
+
+    lmc_t lmc = { 
+	.limit = 3072*1000*60,
+	.step = 1,
+	.e = env,
+	.d = ALLOC_VAL(TAG_STOP) };
+
+    fprintf(stderr, "\nExecuting LMC main() ...\n");
+    exec_lmc(&lmc);
+
+    val_t cons = POPF(&lmc.s);
+    if (TAG(cons) != TAG_CONS) {
+	fprintf(stderr, "main() must return CONS");
+	return;
+    }
+
+    dump_valp("MAIN:", &cons, 0);
+
+    state->ai = *CARF(cons);
+    state->step = *CDRF(cons);
+    if (TAG(state->step) != TAG_CLOSURE) {
+	fprintf(stderr, "main() must return CONS(?, CLOSURE)");
+	return;
+    }
+}
 
 void exec_lman(state_t *state, int index)
 {
@@ -207,12 +239,55 @@ void exec_lman(state_t *state, int index)
 	"%10d:\texec_lman[%d] ...\n",
 	state->ticks, index);
 
-    lman_t *lman = &state->lman[index];
-    lmc_t lmc = { .limit = 3072*1000 };
+    FREE_STACK(&state->lmc.s);
+    FREE_STACK(&state->lmc.d);
+    // FREE_ENV(&state->lmc.e);
 
-    exec_lmc(&lmc);
-    lman->dir = DIR_RIGHT;
+    state->lmc.c = CAR_CLOSURE(state->step);
+    state->lmc.e = CDR_CLOSURE(state->step);
+
+    frame_p env = ALLOC_FRAME(2, state->lmc.e);
+    FRAME_VALUE(env, 0) = state->ai;
+    FRAME_VALUE(env, 1) = VAL_INT(-1);
+
+    state->lmc.e = env;
+    state->lmc.d = ALLOC_VAL(TAG_STOP);
+
+    state->lmc.fault = 0;
+    state->lmc.icnt = 0;
+    state->lmc.limit = 3072*1000;
+
+    fprintf(stderr, "\nExecuting LMC step() ...\n");
+    exec_lmc(&state->lmc);
+
+    val_t cons = POPF(&state->lmc.s);
+    if (TAG(cons) != TAG_CONS) {
+	fprintf(stderr, "step() must return CONS");
+	return;
+    }
+
+    dump_valp("STEP", &cons, 0);
+
+    state->ai = *CARF(cons);
+    state->lman[index].dir = NUM(*CDRF(cons));
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void move_lman(state_t *state, int index)
 {
@@ -440,6 +515,8 @@ int main(int argc, char *argv[])
     class_map(&state.map);
 
     prep_event(&state.event, &state);
+
+    init_lman(&state, 0);
 
     tick_t this = 0;
 
