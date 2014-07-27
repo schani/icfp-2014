@@ -8,6 +8,7 @@
 (defn worldstate_get_ghosts [world_state]
   (car (cdr (cdr world_state))))
 (defn worldstate_get_fruits [world_state]
-  (car (cdr (cdr (cdr world_state)))))
+  (cdr (cdr (cdr world_state))))
+
 (defn lman_get_location [lman_state]
    (car (cdr lman_state)))
