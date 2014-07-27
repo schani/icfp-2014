@@ -1,3 +1,3 @@
 #!/bin/bash
 
-exec awk -f  map2lisp.awk
+exec awk -f $(dirname $0)/map2lisp.awk
