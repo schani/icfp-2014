@@ -111,7 +111,7 @@
            [(concat arg-pres
                     function-pre
                     [[:ap (count args)]])
-            (apply concat function-post arg-posts)])
+            (concat function-post arg-posts)])
 
          (x :guard number?)
          [[[:ldc x]]

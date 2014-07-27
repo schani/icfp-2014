@@ -3,4 +3,5 @@
       (+ a b))
 
 (defn main [a b]
-      (add a b))
+      (add (if (= 1 2) 0 a)
+	   b))
