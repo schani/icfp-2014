@@ -146,6 +146,12 @@ The reason is that the function call to `fac` here is not in a tail
 position, because there remains work to be done after the call has
 finished, namely the multiplication.
 
+## Includes
+
+Files can include other files on the toplevel, like so:
+
+    (include "other-file.lisp")
+
 # Extensions
 
 Maybe we'll implement this later.

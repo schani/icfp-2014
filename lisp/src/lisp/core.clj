@@ -253,10 +253,28 @@
   (let [sexpr-seq (repeatedly (fn [] (read stream false :theend)))]
     (take-while (partial not= :theend) sexpr-seq)))
 
+(declare ^:private read-toplevels)
+
+(defn ^:private process-includes [current-path toplevels]
+  (mapcat (fn [toplevel]
+            (if (= (first toplevel) 'include)
+              (let [given (second toplevel)
+                    include-filename (if (.isAbsolute (java.io.File. given))
+                                       given
+                                       (.getCanonicalPath (java.io.File. current-path given)))]
+                (read-toplevels include-filename))
+              [toplevel]))
+          toplevels))
+
+(defn ^:private read-toplevels [filename]
+  (with-open [reader (java.io.PushbackReader. (io/reader filename))]
+    (let [toplevels (read-all reader)]
+      (process-includes (.getCanonicalPath (.getParentFile (.getAbsoluteFile (java.io.File. filename))))
+                        toplevels))))
+
 (defn ^:private compile-file [in-filename out-filename]
-  (with-open [reader (java.io.PushbackReader. (io/reader in-filename))
-              writer (io/writer out-filename)]
-    (let [toplevels (read-all reader)
+  (with-open [writer (io/writer out-filename)]
+    (let [toplevels (process-includes (.getAbsolutePath (java.io.File. ".")) [['include in-filename]])
           labels (toplevel-labels toplevels)
           labels-map (into {} labels)
           toplevel-env [(zipmap (map first labels) (range))]
