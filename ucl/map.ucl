@@ -1,3 +1,4 @@
+; -*- clojure -*-
 ; map funs 
 
 (include "stdlib.ucl")

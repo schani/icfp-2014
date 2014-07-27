@@ -2,4 +2,4 @@ all:
 	echo none
 
 clean:
-	rm -f *.gcc
+	rm -f *.gcc *~

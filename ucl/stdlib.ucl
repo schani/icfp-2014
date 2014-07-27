@@ -1,4 +1,17 @@
+; -*- clojure -*-
+
+(defn length [list]
+  (length_ 0 list))
+
 (defn nth [n list]
   (if (= n 0)
     (car list)
     (nth (- n 1) (cdr list))))
+
+; internal stuff
+
+(defn length_ [n list]
+  (if (= 0 list)
+    n
+    (length_ (+ n 1) (cdr list))))
+
