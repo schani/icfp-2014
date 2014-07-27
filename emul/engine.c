@@ -168,7 +168,8 @@ void move_ghost(state_t *state, int index)
 	    dir = dir;
 	} else {
 	    for (int d=0; d<4; d++) {
-		if (class & (1 << d)) {
+		if ((d != inv) &&
+		    (class & (1 << d))) {
 		    dir = d;
 		    break;
 		}
