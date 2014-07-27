@@ -106,8 +106,8 @@ int sq_ansi(square_t v, int *at)
 	case SQ_PILL   : at[0] = 37; at[1] = -1; at[2] = -1; return '.';
 	case SQ_POWER  : at[0] = 31; at[1] =  1; at[2] = -1; return 'o';
 	case SQ_FRUIT  : at[0] = 32; at[1] =  1; at[2] = -1; return '%';
-	case SQ_LMAN   : at[0] = 37; at[1] =  1; at[2] = -1; return 'L';
-	case SQ_LMAN2  : at[0] = 37; at[1] =  1; at[2] = -1; return 'M';
+	case SQ_LMAN   : at[0] = 33; at[1] =  1; at[2] = -1; return 'C';
+	case SQ_LMAN2  : at[0] = 33; at[1] =  0; at[2] = -1; return 'D';
 	case SQ_GHOST  : at[0] = 31; at[1] =  0; at[2] = -1; return '0';
 	case SQ_GHOST2 : at[0] = 35; at[1] =  1; at[2] = -1; return '1';
 	case SQ_GHOST3 : at[0] = 36; at[1] =  0; at[2] = -1; return '2';
