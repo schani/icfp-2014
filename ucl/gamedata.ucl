@@ -1,0 +1,14 @@
+; this is to decode game data provided by simulator
+
+(defn worldstate_get_map [world_state]
+  (car world_state))
+(defn worldstate_get_lman_state [world_state]
+  (car (cdr world_state)))
+(defn worldstate_get_ghosts [world_state]
+  (car (cdr (cdr world_state))))
+(defn worldstate_get_fruits [world_state]
+  (car (cdr (cdr (cdr world_state)))))
+
+(defn lman_get_location [lman_state]
+  (car (cdr lman_state)))
+
