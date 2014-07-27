@@ -47,85 +47,89 @@
      (recur (rest env)
             (inc n-up)))))
 
-(defn ^:private compile-expr [env expr]
+(defn ^:private compile-expr [env tail expr]
   (match expr
 
          ([(kw :guard if-keyword?) condition consequent alternative] :seq)
          (let [consequent-label (gensym "consequent")
                alternative-label (gensym "alternative")
-               [condition-pre condition-post] (compile-expr env condition)
-               [consequent-pre consequent-post] (compile-expr env consequent)
-               [alternative-pre alternative-post] (compile-expr env alternative)]
+               [condition-pre condition-post] (compile-expr env false condition)
+               [consequent-pre consequent-post] (compile-expr env tail consequent)
+               [alternative-pre alternative-post] (compile-expr env tail alternative)
+               join-unless-tail (if tail [] [[:join]])]
            [(concat condition-pre
-                   [[:sel consequent-label alternative-label]])
+                   [[(if tail :tsel :sel) consequent-label alternative-label]])
             (concat condition-post
                     [[:label consequent-label]]
                     consequent-pre
-                    [[:join]]
+                    join-unless-tail
                     consequent-post
                     [[:label alternative-label]]
                     alternative-pre
-                    [[:join]]
+                    join-unless-tail
                     alternative-post)])
 
          ([(kw :guard let-keyword?) bindings body] :seq)
          (let [bindings (partition 2 bindings)
                binding-names (map first bindings)
                binding-exprs (map second bindings)
-               binding-codes (map (partial compile-expr env) binding-exprs)
+               binding-codes (map (partial compile-expr env false) binding-exprs)
                binding-pres (mapcat first binding-codes)
                binding-posts (mapcat second binding-codes)
                body-env (cons (zipmap binding-names (range))
                               env)
-               [body-pre body-post] (compile-expr body-env body)
+               [body-pre body-post] (compile-expr body-env true body)
                body-label (gensym "let")]
            [(concat binding-pres
                     [[:ldf body-label]]
-                    [[:ap (count bindings)]])
+                    [[(if tail :tap :ap) (count bindings)]])
             (concat binding-posts
                     [[:label body-label]]
                     body-pre
-                    [[:rtn]]
+                    (if tail [] [[:rtn]])
                     body-post)])
 
          ([(op :guard unary-operator?) x] :seq)
-         (let [[x-pre x-post] (compile-expr env x)]
+         (let [[x-pre x-post] (compile-expr env false x)]
            [(concat x-pre
-                    [(unary-operators op)])
+                    [(unary-operators op)]
+                    (if tail [[:rtn]] []))
             x-post])
 
          ([(op :guard binary-operator?) a b] :seq)
-         (let [[a-pre a-post] (compile-expr env a)
-               [b-pre b-post] (compile-expr env b)]
+         (let [[a-pre a-post] (compile-expr env false a)
+               [b-pre b-post] (compile-expr env false b)]
            [(concat a-pre
                     b-pre
-                    [[(binary-operators op)]])
+                    [[(binary-operators op)]]
+                    (if tail [[:rtn]] []))
             (concat a-post b-post)])
 
          (x :guard list?)
          (let [[function & args] x
-               arg-codes (map (partial compile-expr env) args)
+               arg-codes (map (partial compile-expr env false) args)
                arg-pres (mapcat first arg-codes)
                arg-posts (mapcat second arg-codes)
-               [function-pre function-post] (compile-expr env function)]
+               [function-pre function-post] (compile-expr env false function)]
            [(concat arg-pres
                     function-pre
-                    [[:ap (count args)]])
+                    [[(if tail :tap :ap) (count args)]])
             (concat function-post arg-posts)])
 
          (x :guard number?)
-         [[[:ldc x]]
+         [(concat [[:ldc x]]
+                  (if tail [[:rtn]] []))
           []]
 
          (x :guard symbol?)
          (let [[n i] (env-lookup env x)]
-           [[[:ld n i]]
+           [(concat [[:ld n i]]
+                    (if tail [[:rtn]] []))
             []])))
 
 (defn ^:private compile-function-body [env expr]
-  (let [[pre post] (compile-expr env expr)]
+  (let [[pre post] (compile-expr env true expr)]
     (concat pre
-            [[:rtn]]
             post)))
 
 (defn ^:private compile-toplevel [env code]

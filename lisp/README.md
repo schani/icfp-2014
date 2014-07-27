@@ -83,6 +83,32 @@ the body, not in the value expressions.  For example, this:
 
 returns 3.
 
+## Loops, or lack thereof
+
+Like Scheme and OCaml, this LISP doesn't provide any loops.  It does,
+however, provide proper tail recursion, which is essentially a goto
+with parameter passing.  For example, here's how to implement a
+factorial that runs in constant space:
+
+    (defn fac-loop [so-far n]
+	  (if (> n 1)
+	    (fac-loop (* so-far n) (- n 1))
+		so-far))
+
+    (defn fac [n]
+	  (fac-loop 1 n))
+
+Note that this implementation will consume stack space:
+
+    (defn fac [n]
+	  (if (> n 1)
+	    (* n (fac (- n 1)))
+		1))
+
+The reason is that the function call to `fac` here is not in a tail
+position, because there remains work to be done after the call has
+finished, namely the multiplication.
+
 ## Main CPU interface
 
     (dbug! x)
@@ -142,12 +168,6 @@ don't.  `do` can be simulated with `let`:
 
 Right now functions are not first class, i.e. there's no `lambda`.  Do
 we need that?
-
-## Tail calls or loops
-
-Right now we have no way to do loops without consuming stack space.
-We might implement either proper tail calls, like Scheme, or `loop`
-like Clojure.
 
 ## Local variable modification
 
