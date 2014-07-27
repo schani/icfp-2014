@@ -33,6 +33,15 @@
 (defn ^:private fn-keyword? [x]
   (= x 'fn))
 
+(defn ^:private and-keyword? [x]
+  (= x 'and))
+
+(defn ^:private or-keyword? [x]
+  (= x 'or))
+
+(defn ^:private not-keyword? [x]
+  (= x 'not))
+
 (defn ^:private takes-labels? [opcode]
   (contains? #{:sel :ldf :tsel} opcode))
 
@@ -51,6 +60,39 @@
             (inc n-up)))))
 
 (declare ^:private compile-function)
+(declare ^:private compile-expr)
+
+(defn ^:private compile-condition [env tail true-label false-label expr]
+  (match expr
+
+         ([(kw :guard and-keyword?) a b] :seq)
+         (let [a-true-label (gensym "and")
+               [a-pre a-post] (compile-condition env tail a-true-label false-label a)
+               [b-pre b-post] (compile-condition env tail true-label false-label b)]
+           [(concat a-pre
+                    [[:label a-true-label]]
+                    b-pre)
+            (concat a-post
+                    b-post)])
+
+         ([(kw :guard or-keyword?) a b] :seq)
+         (let [a-false-label (gensym "or")
+               [a-pre a-post] (compile-condition env tail true-label a-false-label a)
+               [b-pre b-post] (compile-condition env tail true-label false-label b)]
+           [(concat a-pre
+                    [[:label a-false-label]]
+                    b-pre)
+            (concat a-post
+                    b-post)])
+
+         ([(kw :guard not-keyword?) x] :seq)
+         (compile-condition env tail false-label true-label x)
+
+         :else
+         (let [[pre post] (compile-expr env false expr)]
+           [(concat pre
+                    [[:tsel true-label false-label]])
+            post])))
 
 (defn ^:private compile-expr [env tail expr]
   (match expr
@@ -58,20 +100,24 @@
          ([(kw :guard if-keyword?) condition consequent alternative] :seq)
          (let [consequent-label (gensym "consequent")
                alternative-label (gensym "alternative")
-               [condition-pre condition-post] (compile-expr env false condition)
+               continuation-label (gensym "continuation")
+               [condition-pre condition-post] (compile-condition env tail consequent-label alternative-label condition)
                [consequent-pre consequent-post] (compile-expr env tail consequent)
-               [alternative-pre alternative-post] (compile-expr env tail alternative)
-               join-unless-tail (if tail [] [[:join]])]
+               [alternative-pre alternative-post] (compile-expr env tail alternative)]
            [(concat condition-pre
-                   [[(if tail :tsel :sel) consequent-label alternative-label]])
-            (concat condition-post
                     [[:label consequent-label]]
                     consequent-pre
-                    join-unless-tail
-                    consequent-post
+                    (if tail
+                      []
+                      [[:ldc 0]
+                       [:tsel continuation-label continuation-label]])
                     [[:label alternative-label]]
                     alternative-pre
-                    join-unless-tail
+                    (if tail
+                      []
+                      [[:label continuation-label]]))
+            (concat condition-post
+                    consequent-post
                     alternative-post)])
 
          ([(kw :guard let-keyword?) bindings body] :seq)

@@ -90,8 +90,17 @@ Comparisons and `integer?` return either the integer `0` or `1`.
 	  consequent
 	  alternative)
 
-Where `condition` is an integer, with `0` being false, everything else
-true.
+Where `condition` is an expression that evaluates to an integer, with
+`0` being false, everything else true.
+
+Alternatively, the condition may also contain these logical operators:
+
+    (and a b)
+	(or a b)
+	(not x)
+
+`and` and `or` will be short-circuit evaluated.  Note that these three
+operators can not be used anywhere outside of `if` conditions.
 
 ## Binding
 
@@ -137,13 +146,6 @@ The reason is that the function call to `fac` here is not in a tail
 position, because there remains work to be done after the call has
 finished, namely the multiplication.
 
-## Main CPU interface
-
-    (dbug! x)
-	(brk!)
-
-These must not be used where their results might matter.
-
 # Extensions
 
 Maybe we'll implement this later.
@@ -155,13 +157,6 @@ Maybe we'll implement this later.
 should compile to
 
     (- 0 x)
-
-## Logical operators
-
-    (and x y)
-	(or x y)
-
-These should obviously do short circuit evaluation.
 
 ## Inline functions
 
@@ -199,3 +194,10 @@ don't.  `do` can be simulated with `let`:
 	  a)
 
 Doesn't really make sense without loops.
+
+## Main CPU interface
+
+    (dbug! x)
+	(brk!)
+
+These must not be used where their results might matter.
