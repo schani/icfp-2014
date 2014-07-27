@@ -251,7 +251,7 @@
 
 (defn ^:private read-all [stream]
   (let [sexpr-seq (repeatedly (fn [] (read stream false :theend)))]
-    (take-while (partial not= :theend) sexpr-seq)))
+    (doall (take-while (partial not= :theend) sexpr-seq))))
 
 (declare ^:private read-toplevels)
 
