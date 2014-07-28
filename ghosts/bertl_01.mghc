@@ -42,7 +42,6 @@ $move:
 	mov LMAN_Y,b
 
 	int INT_SELF			; fetch our position
-;	mov h,a 			; save id in h for now
 	int INT_GHOST
 	mov SELF_X,a			; save it
 	mov SELF_Y,b

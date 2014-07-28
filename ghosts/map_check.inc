@@ -19,31 +19,29 @@ $map_check:
 	mov g,a				; save x-ordinate
 	inc a
 	int INT_MAP			; map east square
-	jeq $map_check_e,a,0
+	jeq $map_check$e,a,0
 	or  c,2
 	inc d
-$map_check_e:
+$map_check$e:
 	mov a,g				; restore x-ordinate
 	dec a
 	int INT_MAP			; map west square
-	jeq $map_check_w,a,0
+	jeq $map_check$w,a,0
 	or  c,8
 	inc d
-$map_check_w:
+$map_check$w:
 	mov a,g				; restore x-ordinate
 	inc b
 	int INT_MAP			; map south square
-	jeq $map_check_s,a,0
+	jeq $map_check$s,a,0
 	or  c,4
 	inc d
-$map_check_s:
+$map_check$s:
 	mov a,g				; restore x-ordinate
 	sub b,2
 	int INT_MAP			; map north square
-	jeq $map_check_n,a,0
+	jeq $map_check$n,a,0
 	or  c,1
 	inc d
-$map_check_n:
+$map_check$n:
 	ret
-
-

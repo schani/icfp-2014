@@ -73,6 +73,7 @@ $move:
 
 
 .include "map_check.inc"
+.include "calc_vector.inc"
 
 
 	hlt
