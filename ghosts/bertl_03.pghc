@@ -46,11 +46,16 @@
 .var	LMAN_X
 .var	LMAN_Y
 
+.var	LMAN_DX
+.var	LMAN_DY
+.var	LMAN_DM
+
 .var	SELF_X
 .var	SELF_Y
 .var	SELF_V
 .var	SELF_D				; probably not used
-.var	SELF_M
+.var	SELF_M				; probably unused
+.var	SELF_MI
 
 .var	JUNC_X
 .var	JUNC_Y
@@ -81,6 +86,8 @@ $move:
 
 	call $mask_from_dir		; create movement mask
 	mov SELF_M,a
+	xor a,0xF
+	mov SELF_MI,a
 
 	int INT_LMAN			; fetch lman position
 	mov LMAN_X,a			; save it
@@ -98,9 +105,6 @@ $same|y:
 
 ;;;;;;; we are at the same junction!!
 
-	xor SELF_M,3			; invert mask
-	and JUNC_M,SELF_M		; avoid this dir
-
 	mov a,JUNC_M
 	bra $decision
 
@@ -109,22 +113,48 @@ $diff:
 	mov JUNC_X,SELF_X		; record junction
 	mov JUNC_Y,SELF_Y
 	mov JUNC_M,MAP_MASK
-	xor SELF_M,3			; invert mask
-	and JUNC_M,SELF_M		; avoid this dir
 
-	mov f,e
-	and f,JUNC_M
+	mov LMAN_DX,c			; save data from vector
+	mov LMAN_DY,d
+	mov LMAN_DM,e
+
+
+	int INT_SELF			; 
+	dec a				; select other ghost
+	jlt $valid,a,GHOSTS			
+	mov a,GHOSTS
+	dec a
+$valid:
+	int INT_GHOST			; get other ghost pos
+
+	call $calc_vector		; calculate vector/dir
+
+
+	xor e,0xF			; invert directions
+	and e,JUNC_M			; limit to options
 
 	mov a,e
+	and a,LMAN_DM			; limit to lman direction
+	jgt $pick,a,0			; if there is an option
 
+	mov a,JUNC_M
+	and a,LMAN_DM
+	jgt $pick,a,0			; if this is an option
+
+	mov a,e				; take whatever is left
+$pick:
+;	mov d,SELF_M
+;	mov f,JUNC_M
+;	mov g,LMAN_DM
+;	dump
 
 $decision:
+	and JUNC_M,SELF_MI		; avoid this next time
+
 	call $dir_from_mask
 	int INT_SETDIR
 
 	hlt
-
-
 
 
 $no_choice:				; do something else
