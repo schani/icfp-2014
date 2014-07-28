@@ -1,0 +1,171 @@
+; -*- clojure -*-
+; first smart bot 
+
+;; this bot is still extremely stupid and will life-lock in a up/down szenario
+;; still I tried to comment this well so it is clear what happens where.
+
+;; in this setting, if fed to the official simulator and map,
+;; lambdaman will run to and stay in the upper rightmost vertical
+;; segment and remain there. He will die once, and then the game 
+;; enters an infinite loop as 3 ghosts get stuck in center and
+;; ghost 1 enters a long closed loop that never reaces lambda.
+;; (tested beyond 100k steps)
+
+;; standard includes for this project, nothing fancy here
+;; (include "../ucl/stdlib.ucl") ; automatic by means of map.ucl
+
+(include "../ucl/map.ucl")
+(include "../ucl/gamedata.ucl")
+
+;; basic next_x field pos (as of emp idiot bot)
+
+(defn next_x [direction x]
+  (if (= direction 1)
+    (+ x 1)
+    (if (= direction 3)
+      (- x 1)
+      x)))
+
+;; basic next_y field pos (as of emp idiot bot)
+
+(defn next_y [direction y]
+  (if (= direction 2)
+    (+ y 1)
+    (if (= direction 0)
+      (- y 1)
+      y)))
+
+;; my dumb direction selector (utilizes surround list)
+
+(defn newdir [direction surround tainted] 
+  (let [ 
+        can_go_up (> (car surround) 0) 
+        can_go_right (> (car (cdr surround)) 0) 
+        can_go_down (> (car (cdr (cdr surround))) 0) 
+        can_go_left (> (cdr (cdr (cdr surround))) 0)
+       ]
+    (let [ ; 1 -> TRUE, 0 -> FALSE
+          can_go_up (if (car tainted) 0 can_go_up)
+          can_go_right (if (car (cdr tainted)) 0 can_go_right)
+          can_go_down (if (car (cdr (cdr tainted))) 0 can_go_down)
+          can_go_left (if (cdr (cdr (cdr tainted))) 0 can_go_left)
+         ]
+      (if (= 1 can_go_up)
+        0
+        (if (= 1 can_go_right)
+          1
+          (if (= 1 can_go_down)
+            2
+            (if (= 1 can_go_left)
+              3
+              direction ;; make a sound decision here (direction implies "wait")
+            )
+          )
+        )
+      )
+    ) 
+  )
+)
+
+;; construct a new state list (proof of concept, numbers of turns in respective directions)
+
+(defn calc_ai_state [state direction] 
+  (let [nr_up (car state)
+        nr_right (car (cdr state))
+        nr_down (car (cdr (cdr state)))
+        nr_left (cdr (cdr (cdr state)))
+       ]
+    (let [nr_up (if (= direction 0) (+ nr_up 1) nr_up)
+          nr_right (if (= direction 1) (+ nr_right 1) nr_right)
+          nr_down (if (= direction 2) (+ nr_down 1) nr_down)
+          nr_left (if (= direction 3) (+ nr_left 1) nr_left)
+         ]
+      (cons nr_up (cons nr_right (cons nr_down nr_left)))
+    )
+  )
+)
+
+;; inline check if field ghosttainted
+(defn istainted? [x y ghost_states]
+  (if (or (map_is_ghost? x y ghost_states) (map_will_ghost_be? x y ghost_states)) 1 0)
+)
+
+;; get_taintedlist
+(defn get_taintedlist [x y ghost_states]
+  (let [
+       x_o x y_o (- y 1)
+       x_u x y_u (+ y 1)
+       x_l (- x 1) y_l y
+       x_r (+ x 1) y_r y
+       ]
+    (cons (istainted? x_o y_o ghost_states)
+      (cons (istainted? x_r y_r ghost_states)
+        (cons (istainted? x_u y_u ghost_states) (istainted? x_l y_l ghost_states)
+        )
+      ) 
+    ) 
+  )
+)
+
+;; the stepper function
+
+(defn lambdastep (ai_state world_state)
+  ;; primary setup (knd of always need to do this)
+  (let [
+        world_map (worldstate_get_map world_state)          ; get world map
+        lman_state (worldstate_get_lman_state world_state)  ; get lambda man state tuple
+        ghost_states (worldstate_get_ghosts world_state)    ; get ghost states
+       ]
+    (let [
+          mypos (lman_get_location lman_state)              ; get lambda man current position tuple
+          olddirection (lman_get_direction lman_state)      ; get current ("old") direction
+         ]
+      (let [
+            myposx (car mypos)                              ; extract "x" position from current position tuple
+            myposy (cdr mypos)                              ; extract "x" position from current position tuple
+           ]
+        ;;
+        ;; now for some 'specials':
+        ;; 
+        (let [
+              ; get content of potential next tile (if current direction is kept)
+              tile (map_get (next_x olddirection myposx) (next_y olddirection myposy) world_map)
+              ; get 4-tuple of surrounding tiles (slow now, might be optimized, if cycles are a problem)
+              surroundings (map_get_surroundings myposx myposy world_map)
+              ; create "all clear" 4-tuple for surrounding fields (dummy)
+              taintedlist (get_taintedlist myposx myposy ghost_states)
+             ]
+          ;;
+          ;; almost there: now determine new direction
+          ;;
+          (let [ 
+                the_new_direction (if (= tile 0)                        ; test whether next tile is wall
+                      (newdir olddirection surroundings taintedlist)    ; yes then find new direction
+                      olddirection)                                     ; no then keep old direction
+               ]
+            ;;
+            ;; cleanup and return: update status list and return
+            ;;
+            (let [
+                  ai_state (calc_ai_state ai_state the_new_direction)   ; create new status list
+                 ]
+              (cons ai_state the_new_direction)                         ; create return value (2-tuple)
+            )
+          )
+        )
+      )
+    )
+  )
+)
+
+;;
+;; required main function
+;;
+(defn main [world_state undoc] 
+  (let [
+        ai_status (cons 0 (cons 0 (cons 0 0))) ; remember nr of counts for each direction
+       ]
+    (cons ai_status lambdastep)                ; return initializer 2-tuple (status and step function)
+  )
+)
+
