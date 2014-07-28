@@ -15,6 +15,22 @@
 (defn opposite_direction [dir]
   (modulo 4 (+ dir 2)))
 
+; compute next x coordinate in given direction
+(defn next_x [direction x]
+  (if (= direction 1)
+    (+ x 1)
+    (if (= direction 3)
+      (- x 1)
+      x)))
+
+; compute next y coordinate in given direction
+(defn next_y [direction y]
+  (if (= direction 2)
+    (+ y 1)
+    (if (= direction 0)
+      (- y 1)
+      y)))
+
 ; must not be called on border
 (defn map_get_surroundings [x y map]
   (cons (map_get x (- y 1) map)
@@ -27,6 +43,29 @@
 (defn map_create_junction_list [map]
   map_create_junction_list_ 0 1 (length map) map)
 
+; check if bot is on that field
+(defn map_is_ghost? [x y ghost_states]
+  (if (atom? ghost_states)
+    0
+    (let [ghostpos (ghost_get_location (car ghost_states))]
+      (if (and (= x (car ghostpos))
+               (= y (cdr ghostpos)))
+        1
+        (map_is_ghost? x y (car ghost_states))))))
+
+(defn map_will_ghost_be? [x y ghost_states]
+  (if (atom? ghost_states)
+    0
+    (let [ghostpos (ghost_get_location (car ghost_states))
+          ghostdir (ghost_get_direction (car ghost_states))]
+      (if (and (= x (next_x ghostdir (car ghostpos)))
+               (= y (next_y ghostdir (cdr ghostpos))))
+        1
+        (map_will_ghost_be? x y (car ghost_states))))))
+
+; check if bot will be on that field
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; internal
 (defn map_create_junction_list_ [result y lines mappart]
   (if (> 3 length)

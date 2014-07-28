@@ -11,10 +11,19 @@
   (cdr (cdr (cdr world_state))))
 
 (defn lman_get_vitality [lman_state]
-   (car lman_state))
+  (car lman_state))
 (defn lman_get_location [lman_state]
-   (car (cdr lman_state)))
+  (car (cdr lman_state)))
 (defn lman_get_direction [lman_state]
-   (car (cdr (cdr lman_state))))
+  (car (cdr (cdr lman_state))))
 (defn lman_get_lives [lman_state]
-   (car (cdr (cdr (cdr lman_state)))))
+  (car (cdr (cdr (cdr lman_state)))))
+(defn lman_get_score [lman_state]
+  (cdr (cdr (cdr (cdr lman_state)))))
+
+(defn ghost_get_vitality [ghost_state]
+  (car ghost_state))
+(defn ghost_get_location [ghost_state]
+  (car (cdr ghost_state)))
+(defn ghost_get_direction [ghost_state]
+  (cdr (cdr ghost_state)))
