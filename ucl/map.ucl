@@ -51,8 +51,9 @@
       (if (and (= x (car ghostpos))
                (= y (cdr ghostpos)))
         1
-        (map_is_ghost? x y (car ghost_states))))))
+        (map_is_ghost? x y (cdr ghost_states))))))
 
+; check if bot will be on that field on its next move
 (defn map_will_ghost_be? [x y ghost_states]
   (if (atom? ghost_states)
     0
@@ -61,9 +62,7 @@
       (if (and (= x (next_x ghostdir (car ghostpos)))
                (= y (next_y ghostdir (cdr ghostpos))))
         1
-        (map_will_ghost_be? x y (car ghost_states))))))
-
-; check if bot will be on that field
+        (map_will_ghost_be? x y (cdr ghost_states))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; internal
