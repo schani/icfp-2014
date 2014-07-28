@@ -2,3 +2,4 @@
 (defn cons [a b] [a b])
 (def car first)
 (def cdr second)
+(def atom? integer?)
