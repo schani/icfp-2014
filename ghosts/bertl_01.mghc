@@ -1,0 +1,170 @@
+
+
+.def	INT_SETDIR	0
+.def	INT_LMAN	1
+.def	INT_LMAN2	2
+.def	INT_SELF	3
+.def	INT_GSTART	4
+.def	INT_GHOST	5
+.def	INT_GSTAT	6
+.def	INT_MAP		7
+.def	INT_DUMP	8
+
+.def	DIR_UP		0
+.def	DIR_RIGHT	1
+.def	DIR_DOWN	2
+.def	DIR_LEFT	3
+
+
+.var	FLAGS
+
+.def	FL_INIT		0x80
+
+.var	GHOSTS
+.var	MDIRS
+
+.var	LMAN_X
+.var	LMAN_Y
+
+.var	SELF_X
+.var	SELF_Y
+
+.var	JUNC_X
+.var	JUNC_Y
+.var	JUNC_D
+
+
+	jeq $init,FLAGS,0		; test if uninitialized
+$move:
+
+	int INT_LMAN			; fetch lman position
+	mov LMAN_X,a			; save it
+	mov LMAN_Y,b
+
+	int INT_SELF			; fetch our position
+;	mov h,a 			; save id in h for now
+	int INT_GHOST
+	mov SELF_X,a			; save it
+	mov SELF_Y,b
+
+
+;;;;;;; detect junction by scanning the map environment
+
+	int INT_MAP			; map square under us
+	mov c,a
+
+	clr MDIRS
+	clr d
+	mov a,SELF_X
+	inc a
+	int INT_MAP			; map east square
+	jgt $skip_e,a,0
+	or  MDIRS,2
+	inc d
+$skip_e:
+	mov a,SELF_X
+	dec a
+	int INT_MAP			; map west square
+	jgt $skip_w,a,0
+	or  MDIRS,8
+	inc d
+$skip_w:
+	mov a,SELF_X
+	inc b
+	int INT_MAP			; map south square
+	jgt $skip_s,a,0
+	or  MDIRS,4
+	inc d
+$skip_s:
+	mov a,SELF_X
+	sub b,2
+	int INT_MAP			; map north square
+	jgt $skip_n,a,0
+	or  MDIRS,1
+	inc d
+$skip_n:
+	mov a,128
+	jgt $no_junct,d,1
+
+
+	mov e,SELF_X
+	mov f,JUNC_X
+	mov g,SELF_Y
+	mov h,JUNC_Y
+	int INT_DUMP
+
+	jeq $same_x,SELF_X,JUNC_X	; same junction?
+	bra $diff
+$same_x:
+	jeq $same_y,SELF_Y,JUNC_Y
+	bra $diff
+$same_y:
+	inc JUNC_D			; choose different dir
+	mov a,JUNC_D
+	and a,3
+	int INT_DUMP
+	int INT_SETDIR
+	hlt
+$diff:
+	mov JUNC_X,SELF_X
+	mov JUNC_Y,SELF_Y
+;	mov a,129
+$no_junct:
+;	mov e,MDIRS
+
+	jgt $east,LMAN_X,SELF_X		; lman east of us?
+
+	mov c,SELF_X			; calculate delta
+	sub c,LMAN_X
+	mov e,DIR_LEFT			; 
+	bra $west
+$east:
+	mov c,LMAN_X			; calculate delta
+	sub c,SELF_X
+	mov e,DIR_RIGHT			; 
+$west:
+	jgt $south,LMAN_Y,SELF_Y	; lman south of us?
+
+	mov d,SELF_Y			; calculate delta
+	sub d,LMAN_Y
+	mov f,DIR_UP			; 
+	bra $north
+$south:
+	mov d,LMAN_Y			; calculate delta
+	sub d,SELF_Y
+	mov f,DIR_DOWN			; 
+$north:
+	jlt $horiz,c,d			; prefer horizontal
+	mov a,e
+	bra $vert
+$horiz:
+	mov a,f
+$vert:
+	int INT_SETDIR
+;	mov a,130
+;	int INT_DUMP
+
+;	mov a,-1
+;	int INT_GSTART
+;	int INT_DUMP
+
+
+	hlt
+$init:
+
+;;;;;;; code to check for the total number of ghosts by
+;;;;;;; testing from 255 down to 0 till we get a direction
+
+	mov b,-1		; illegal direction
+$gc_loop:
+	dec a
+	dec GHOSTS		; count down
+	int INT_GSTAT		; check for ghost
+	jeq $gc_loop,b,-1	; continue until last ghost
+
+
+;;;;;;; end of init routine, mark as executed.
+
+	or  FLAGS,FL_INIT	; mark init is done
+	mov pc,$move		; continue with move?
+

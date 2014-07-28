@@ -37,24 +37,30 @@ static inline
 void int_4(state_t *state, ghost_t *ghost)
 {
     uint8_t idx = ghost->reg.a;
-    ghost->reg.a = state->ghost[idx].start.x;
-    ghost->reg.b = state->ghost[idx].start.y;
+    if (idx < state->gnum) {
+	ghost->reg.a = state->ghost[idx].start.x;
+	ghost->reg.b = state->ghost[idx].start.y;
+    }
 }
 
 static inline
 void int_5(state_t *state, ghost_t *ghost)
 {
     uint8_t idx = ghost->reg.a;
-    ghost->reg.a = state->ghost[idx].pos.x;
-    ghost->reg.b = state->ghost[idx].pos.y;
+    if (idx < state->gnum) {
+	ghost->reg.a = state->ghost[idx].pos.x;
+	ghost->reg.b = state->ghost[idx].pos.y;
+    }
 }
 
 static inline
 void int_6(state_t *state, ghost_t *ghost)
 {
     uint8_t idx = ghost->reg.a;
-    ghost->reg.a = state->ghost[idx].vit;
-    ghost->reg.b = state->ghost[idx].dir;
+    if (idx < state->gnum) {
+	ghost->reg.a = state->ghost[idx].vit;
+	ghost->reg.b = state->ghost[idx].dir;
+    }
 }
 
 static inline
