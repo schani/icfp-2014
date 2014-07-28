@@ -105,6 +105,8 @@ $same|y:
 
 ;;;;;;; we are at the same junction!!
 
+	and JUNC_M,SELF_MI		; avoid same direction
+
 	mov a,JUNC_M
 	bra $decision
 
@@ -156,9 +158,6 @@ $decision:
 
 	call $dir_from_mask
 	int INT_SETDIR
-
-	hlt
-
 
 $no_choice:				; do something else
 	hlt
