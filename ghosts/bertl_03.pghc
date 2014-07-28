@@ -118,6 +118,9 @@ $diff:
 	mov LMAN_DY,d
 	mov LMAN_DM,e
 
+	jeq $hunt,SELF_V,0
+	xor LMAN_DM,0xF			; invert directions
+$hunt:
 
 	int INT_SELF			; 
 	dec a				; select other ghost
