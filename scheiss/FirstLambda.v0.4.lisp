@@ -13,9 +13,9 @@
 
 ;; standard includes for this project, nothing fancy here
 
-(include "../ucl/stdlib.ucl")
-(include "../ucl/gamedata.ucl")
+;; (include "../ucl/stdlib.ucl") ; automatic by means of map.ucl
 (include "../ucl/map.ucl")
+(include "../ucl/gamedata.ucl")
 
 ;; basic next_x field pos (as of emp idiot bot)
 
