@@ -8,7 +8,8 @@ BEGIN		{ IGNORECASE=1; PC=-1; }
 		  split($0, A, "[, \t\n:]*");
 		  A[2]=tolower(A[2]);
 		  A[3]=tolower(A[3]);
-		  A[4]=tolower(A[4]);					}
+		  A[4]=tolower(A[4]);
+		  					}
 
 /[a-z0-9_]:/	{ L[A[1]]=PC; next;					}
 
@@ -17,7 +18,19 @@ function copy(l, a) {
 		    printf "ERR: PC Overlap [%d]\n", PC >"/dev/stderr";
 		  C[PC]=l; for (i=0; i<=l; i++) C[PC,i]=a[i+1]; }
 
+
+(A[1]==".DEF")	{ D[A[2]]=A[3];					next;	}
+(A[1]==".ORG")	{ PC=and(strtonum(A[2]), 255);			next;	}
+(A[1]==".LOC")	{ MC=and(strtonum(A[2]), 255);			next;	}
+(A[1]==".VAR")	{ D[A[2]]=sprintf("[%d]", MC++);		next;	}
+(A[1]==".SET")	{ S[A[2]]=A[3];					next;	}
+
 (A[1]=="")	{ next;							}
+
+		{ if (A[2] in S) A[2]=S[A[2]];
+		  if (A[3] in S) A[3]=S[A[3]];
+		  if (A[4] in S) A[4]=S[A[4]];				}
+
 
 (A[1]=="MOV")	{ copy(2,A);	PC++;				next;	}
 
@@ -46,12 +59,6 @@ function copy(l, a) {
 (A[1]=="CLR")	{ A[1]="xor"; A[3]=A[2]; copy(2,A);	PC++;	next;	}
 (A[1]=="NOP")	{ A[1]="and"; A[3]=A[2]="a"; copy(2,A);	PC++;	next;	}
 
-
-
-(A[1]==".DEF")	{ D[A[2]]=A[3];					next;	}
-(A[1]==".ORG")	{ PC=and(strtonum(A[2]), 255);			next;	}
-(A[1]==".LOC")	{ MC=and(strtonum(A[2]), 255);			next;	}
-(A[1]==".VAR")	{ D[A[2]]=sprintf("[%d]", MC++);		next;	}
 
 
 END		{

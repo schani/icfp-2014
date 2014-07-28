@@ -21,7 +21,7 @@
 	mov PC,\target
 .endm
 
-.macro	ret sp=h scratch=g
+.macro	ret sp=h scratch=SCRATCH
 	mov \scratch,[\sp]
 	inc \sp
 	add \scratch,2
@@ -33,9 +33,10 @@
 .endm
 
 
+.loc	255
+.var	SCRATCH
 
-
-
+.loc	0
 .var	FLAGS
 
 .def	FL_INIT		0x80
@@ -47,10 +48,14 @@
 
 .var	SELF_X
 .var	SELF_Y
+.var	SELF_V
+.var	SELF_D				; probably not used
+.var	SELF_M
 
 .var	JUNC_X
 .var	JUNC_Y
-.var	JUNC_D
+.var	JUNC_M
+
 
 
 
@@ -58,25 +63,131 @@
 $move:
 	mov h,-1			; call stack
 
-	int INT_LMAN			; fetch lman position
-	mov LMAN_X,a			; save it
-	mov LMAN_Y,b
-
 	int INT_SELF			; fetch our position
 	int INT_GHOST
 	mov SELF_X,a			; save it
 	mov SELF_Y,b
 
-	call $map_check
+	call $map_check			; check map options
+
+	jlt $no_choice,MAP_DIRS,3	; do we have a choice?
+
+;;;;;;; we have a choice!!
+
+	int INT_SELF			; fetch our status
+	int INT_GSTAT
+	mov SELF_V,a
+	mov SELF_D,b
+
+	call $mask_from_dir		; create movement mask
+	mov SELF_M,a
+
+	int INT_LMAN			; fetch lman position
+	mov LMAN_X,a			; save it
+	mov LMAN_Y,b
+
+	call $calc_vector		; calculate vector/dir
+
+
+	jeq $same|x,SELF_X,JUNC_X	; same junction?
+	bra $diff
+$same|x:
+	jeq $same|y,SELF_Y,JUNC_Y
+	bra $diff
+$same|y:
+
+;;;;;;; we are at the same junction!!
+
+	xor SELF_M,3			; invert mask
+	and JUNC_M,SELF_M		; avoid this dir
+
+	mov a,JUNC_M
+	bra $decision
+
+$diff:
+
+	mov JUNC_X,SELF_X		; record junction
+	mov JUNC_Y,SELF_Y
+	mov JUNC_M,MAP_MASK
+	xor SELF_M,3			; invert mask
+	and JUNC_M,SELF_M		; avoid this dir
+
+	mov f,e
+	and f,JUNC_M
+
 	dump
+
+	mov a,e
+
+
+$decision:
+	call $dir_from_mask
+	int INT_SETDIR
+
 	hlt
 
+
+
+
+$no_choice:				; do something else
+	hlt
+
+
+
+;;;;;;; -------------------------------------------------------------
+;;;;;;; includes
+;;;;;;; -------------------------------------------------------------
+
+.set	@a0	b
+.set	@r0	a
+
+.include "mask_from_dir.inc"
+
+	hlt
+
+;;;;;;; -------------------------------------------------------------
+
+.set	@a0	a
+.set	@r0	a
+
+.include "dir_from_mask.inc"
+
+	hlt
+
+;;;;;;; -------------------------------------------------------------
+
+.var	MAP_MASK
+.var	MAP_DIRS
+
+.set	@r0	MAP_MASK
+.set	@r1	MAP_DIRS
+.set	@s0	SCRATCH
 
 .include "map_check.inc"
-.include "calc_vector.inc"
-
 
 	hlt
+
+;;;;;;; -------------------------------------------------------------
+
+.set	@a0	SELF_X
+.set	@a1	SELF_Y
+.set	@a2	a
+.set	@a3	b
+.set	@r0	c
+.set	@r1	d
+.set	@r2	e
+
+.include "calc_vector.inc"
+
+	hlt
+
+;;;;;;; -------------------------------------------------------------
+
+
+;;;;;;; -------------------------------------------------------------
+;;;;;;; init function
+;;;;;;; -------------------------------------------------------------
+
 $init:
 
 ;;;;;;; code to check for the total number of ghosts by
